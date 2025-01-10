@@ -37,24 +37,48 @@ async fn send_friend_request(
     } = friendship.into_inner();
 
     let cypher = r#"
-        MERGE (u1:User {id: $initiator_id})
-        MERGE (u2:User {id: $recipient_id})
-        CREATE (u1)-[:PENDING {datetime: datetime()}]->(u2)
+    MERGE (u1:User {id: $initiator_id})
+    MERGE (u2:User {id: $recipient_id})
+
+    WITH u1, u2,
+         CASE
+             WHEN u1 = u2 THEN "You cannot send a follow request to yourself"
+             WHEN EXISTS((u1)-[:BLOCKED]->(u2)) THEN "You have blocked this user"
+             WHEN EXISTS((u2)-[:BLOCKED]->(u1)) THEN "This user has blocked you"
+             WHEN EXISTS((u1)-[:PENDING]->(u2)) THEN "You have already sent a follow request to this user"
+             WHEN EXISTS((u2)-[:PENDING]->(u1)) THEN "This user has already sent you a follow request"
+             WHEN EXISTS((u1)-[:ACCEPTED]->(u2)) THEN "You are already friends with this user"
+             WHEN EXISTS((u2)-[:ACCEPTED]->(u1)) THEN "You are already friends with this user"
+             ELSE "OK"
+         END AS message
+
+    WITH u1, u2, message
+    FOREACH (_ IN CASE WHEN message = "OK" THEN [1] ELSE [] END |
+        MERGE (u1)-[:PENDING {datetime: datetime()}]->(u2)
+    )
+
+    RETURN message
     "#;
 
-    let result = graph
-        .run(query(cypher)
-                 .param("initiator_id", initiator_id)
-                 .param("recipient_id", recipient_id),
+    let mut result = graph
+        .execute(query(cypher)
+                     .param("initiator_id", initiator_id)
+                     .param("recipient_id", recipient_id),
         )
-        .await;
+        .await
+        .unwrap();
+    match result.next().await {
+        Ok(Some(row)) => {
+            let message: String = row.get("message").unwrap();
 
-    match result {
-        Ok(_) => HttpResponse::Ok().body("Follow request sent successfully"),
-        Err(err) => {
-            eprintln!("Error sending follow request: {:?}", err);
-            HttpResponse::InternalServerError().body("Failed to send follow request")
+            if message == "OK" {
+                HttpResponse::Ok().body("Follow request sent")
+            } else {
+                HttpResponse::BadRequest().body(message)
+            }
         }
+        Ok(None) => HttpResponse::InternalServerError().body("No rows returned"),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
     }
 }
 
@@ -76,11 +100,22 @@ async fn respond_to_friend_request(
         _ => return HttpResponse::BadRequest().body("Invalid friendship status"),
     };
 
-    let cypher = r#"
-        MATCH (u1:User {id: $initiator_id})-[r:PENDING]->(u2:User {id: $recipient_id})
-        SET r = $status
-        RETURN r
-    "#;
+    let cypher = if status == "BLOCKED" {
+        r#"MATCH (u1:User {id: $initiator_id}), (u2:User {id: $recipient_id})
+        OPTIONAL MATCH (u1)-[r]->(u2)
+        DELETE r
+        WITH u1, u2
+        CALL apoc.create.relationship(u1, $status, {}, u2) YIELD rel as new_r
+        RETURN new_r
+        "#
+    } else {
+        r#"MATCH (u1:User {id: $initiator_id})-[r:PENDING]->(u2:User {id: $recipient_id})
+        CALL apoc.create.relationship(u1, $status, {}, u2) YIELD rel as new_r
+        DELETE r
+        RETURN new_r
+        "#
+    };
+
 
     let result = graph
         .execute(query(cypher)

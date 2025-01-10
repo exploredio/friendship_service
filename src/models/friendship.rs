@@ -1,13 +1,8 @@
-pub enum FriendshipStatus {
-    Pending,
-    Accepted,
-    Declined,
-    Blocked,
-}
+use serde::{Serialize, Deserialize};
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Friendship {
-    friendship_id: String,
-    initiator_id: String,
-    recipient_id: String,
-    status: String,
+    pub initiator_id: String,
+    pub recipient_id: String,
+    pub status: String,
 }

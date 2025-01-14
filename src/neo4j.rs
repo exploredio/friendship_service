@@ -1,4 +1,4 @@
-use neo4rs::{query, Error, Graph};
+use neo4rs::{query, Error, Graph, Node};
 use std::env;
 use std::sync::Arc;
 use actix_web::{post, get, put, web, Responder, HttpResponse};
@@ -10,19 +10,6 @@ pub async fn create_connection() -> Result<Graph, Error> {
     let password = env::var("NEO4J_PASSWORD").expect("NEO4J_PASSWORD must be set");
 
     Graph::new(&uri, &username, &password).await
-}
-
-#[get("/nodes")]
-async fn get_nodes(graph: web::Data<Arc<Graph>>) -> impl Responder {
-    let mut result = graph.execute(query("MATCH (n) RETURN n")).await.unwrap();
-    let mut nodes = vec![];
-
-    while let Ok(Some(row)) = result.next().await {
-        let node: neo4rs::Node = row.get("n").unwrap();
-        nodes.push(node.id());
-    }
-
-    format!("Node IDs: {:?}", nodes)
 }
 
 #[post("/friendships/initiate")]
@@ -135,6 +122,47 @@ async fn respond_to_friend_request(
         Err(err) => {
             eprintln!("Error executing query: {}", err);
             HttpResponse::InternalServerError().body("Failed to update friendship status")
+        }
+    }
+}
+
+#[get("/friendships/{user_id}")]
+async fn get_friendships_by_user_id(
+    user_id: web::Path<String>,
+    graph: web::Data<Arc<Graph>>,
+) -> impl Responder {
+    let user_id = user_id.into_inner();
+
+    let cypher = r#"
+    // Both incoming and outgoing accepted friendships
+    MATCH (u:User{id:$user_id})-[:ACCEPTED]-(result:User)
+    RETURN result;
+    "#;
+
+    let result = graph
+        .execute(query(cypher)
+            .param("user_id", user_id)
+        )
+        .await;
+    match result {
+        Ok(mut rows) => {
+            let mut friendships_ids: Vec<String>= Vec::new();
+            // If friendships are found, add them to the vector
+            while let Ok(Some(row)) = rows.next().await {
+                if let Some(node) = row.get::<Node>("result").ok() {
+                    friendships_ids.push(node.get::<String>("id").unwrap());
+                }
+            }
+
+            if friendships_ids.is_empty() {
+                HttpResponse::NotFound().body("No friendships found")
+            } else {
+                HttpResponse::Ok().json(friendships_ids)
+            }
+        }
+        Err(err) => {
+            eprintln!("Error executing query: {}", err);
+            HttpResponse::InternalServerError().body("Failed to retrieve friendships")
         }
     }
 }

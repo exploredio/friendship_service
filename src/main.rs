@@ -21,7 +21,7 @@ async fn main() -> std::io::Result<()> {
             .service(respond_to_friend_request)
             .service(get_friendships_by_user_id)
     })
-    .bind(("127.0.0.1", 8086))?
+    .bind("0.0.0.0:8086")?
     .run()
     .await
 }

@@ -10,6 +10,10 @@ pub mod models{
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .init();
+
     dotenv().ok();
 
     let graph = Arc::new(create_connection().await.expect("Failed to connect to Neo4j"));

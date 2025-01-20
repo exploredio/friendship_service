@@ -8,3 +8,5 @@ actix-web = "4.9.0"
 dotenv = "0.15.0"
 neo4rs = "0.8.0"
 serde = { version = "1.0.217", features = ["derive"] }
+tracing-subscriber = "0.3.19"
+tracing = "0.1.41"

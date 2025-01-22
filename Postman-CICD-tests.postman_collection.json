@@ -1,0 +1,123 @@
+{
+	"info": {
+		"_postman_id": "2bd91d32-0759-4e94-b7e4-595834ac0e86",
+		"name": "Postman-CICD-tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "23236775"
+	},
+	"item": [
+		{
+			"name": "test_1-[:PENDING]->test_2 Copy",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"initiator_id\":\"test_1\",\r\n    \"recipient_id\":\"test_2\",\r\n    \"status\":\"..\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8086/friendships/initiate",
+					"host": [
+						"localhost"
+					],
+					"port": "8086",
+					"path": [
+						"friendships",
+						"initiate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "test_2-[:PENDING]->test_3 Copy",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"initiator_id\":\"test_2\",\r\n    \"recipient_id\":\"test_3\",\r\n    \"status\":\"..\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8086/friendships/initiate",
+					"host": [
+						"localhost"
+					],
+					"port": "8086",
+					"path": [
+						"friendships",
+						"initiate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get-relations-test-id-1 Copy",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8086/friendships/test_1",
+					"host": [
+						"localhost"
+					],
+					"port": "8086",
+					"path": [
+						"friendships",
+						"test_1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get-relations-test-id-2 Copy",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8086/friendships/test_2",
+					"host": [
+						"localhost"
+					],
+					"port": "8086",
+					"path": [
+						"friendships",
+						"test_2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get-relations-test-id-3 Copy",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8086/friendships/test_3",
+					"host": [
+						"localhost"
+					],
+					"port": "8086",
+					"path": [
+						"friendships",
+						"test_3"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -1,0 +1,44 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.84.0
+
+      - name: Build and Run Friendship Service
+        run: |
+          cargo build --release
+          nohup cargo run --release & # Run the service in the background
+
+
+      - name: Set up Node.js and Newman
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Newman
+        run: npm install -g newman
+
+      - name: Run API Tests
+        run: newman run Postman-CICD-tests.postman_collection.json --reporters cli,html --reporter-html-export newman-report.html
+
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: newman-report
+          path: newman-report.html

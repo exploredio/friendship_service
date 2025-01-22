@@ -34,6 +34,9 @@ jobs:
       - name: Install Newman
         run: npm install -g newman
 
+      - name: Download Newman Reporter Html
+        run: npm install -g newman-reporter-html
+
       - name: Run API Tests
         run: newman run Postman-CICD-tests.postman_collection.json --reporters cli,html --reporter-html-export newman-report.html
 

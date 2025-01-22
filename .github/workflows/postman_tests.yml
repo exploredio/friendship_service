@@ -23,8 +23,11 @@ jobs:
       - name: Build and Run Friendship Service
         run: |
           cargo build --release
-          nohup cargo run --release & # Run the service in the background
-
+          cargo run
+        env:
+          NEO4J_URI: ${{ secrets.NEO4J_URI }}
+          NEO4J_USERNAME: ${{ secrets.NEO4J_USERNAME }}
+          NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
 
       - name: Set up Node.js and Newman
         uses: actions/setup-node@v3

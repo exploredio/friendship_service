@@ -23,7 +23,7 @@ jobs:
       - name: Build and Run Friendship Service
         run: |
           cargo build --release
-          cargo run
+          nohup cargo run --release & # Run the server in the background
         env:
           NEO4J_URI: ${{ secrets.NEO4J_URI }}
           NEO4J_USERNAME: ${{ secrets.NEO4J_USERNAME }}
